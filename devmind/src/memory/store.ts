@@ -12,6 +12,7 @@ export interface DevmindStore {
     getTasks: () => any[]
     getDecisions: () => any[]
     getDuplicates: () => any[]
+    clearFiles: () => void
 }
 
 export function initializeStore(projectPath: string): DevmindStore {
@@ -97,6 +98,9 @@ export function initializeStore(projectPath: string): DevmindStore {
         },
         getDuplicates: () => {
             return db.prepare('SELECT * FROM duplicates').all();
+        },
+        clearFiles: () => {
+             db.prepare('DELETE FROM files').run()
         }
     };
 

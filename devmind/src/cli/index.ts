@@ -1,6 +1,7 @@
 import {Command} from 'commander';
 import chalk from 'chalk';
 import {initializeStore} from '../memory/store';
+import {scanProject} from '../scanner/fileScanner';
 
 const program = new Command();
 program
@@ -17,7 +18,7 @@ program
         console.log(chalk.blue(`Initializing devmind memory for ${projectPath}`));
         const store = initializeStore(projectPath);
         console.log(chalk.green('Devmind memory initialized!'));
-        console.log(chalk.gray('Memory stored at: ${projectPath}/.devmind/memory.db'));
+        console.log(chalk.gray(`Memory stored at: ${projectPath}/.devmind/memory.db`));
     } catch (error) {
         console.log(chalk.red(`Error initializing devmind memory: ${error}`));
     }
@@ -27,7 +28,17 @@ program
   .command('scan')
   .description('Scan project files and store in memory')
   .action(() => {
-    console.log(chalk.blue('Scanning project files...'));
+    try{
+      const projectPath = process.cwd();
+      const store = initializeStore(projectPath);
+      store.clearFiles();
+      console.log(chalk.blue('Scanning project...'));
+      const files = scanProject(projectPath, store);
+      console.log(chalk.green(`Scanned ${files.length} files`));
+      console.log(chalk.gray(`Memory stored at: ${projectPath}/.devmind/memory.db`));
+    } catch (error) {
+      console.log(chalk.red(`Error scanning project: ${error}`));
+    }
   });
 
 program
@@ -44,10 +55,10 @@ program
       const duplicates = store.getDuplicates();
 
       console.log(chalk.bold('\n devmind status \n'));
-      console.log(chalk.green(' File scanned: ${files.length}'));
-      console.log(chalk.green(' Tasks recorded: ${tasks.length}'));
-      console.log(chalk.green(' Decisions logged: ${decisions.length}'));
-      console.log(chalk.green(' Duplicates flagged: ${duplicates.length}'));
+      console.log(chalk.green(' File scanned: '+files.length));
+      console.log(chalk.green(' Tasks recorded: '+tasks.length));
+      console.log(chalk.green(' Decisions logged: '+decisions.length));
+      console.log(chalk.green(' Duplicates flagged: '+duplicates.length));
     }
     catch (error) {
       console.log(chalk.red(`Error getting status: ${error}`));
@@ -55,8 +66,3 @@ program
   });
 
 program.parse(process.argv);
-
-program.on('command:*', () => {
-  });
-
-program.parse();
