@@ -27,15 +27,15 @@ program
 program
   .command('scan')
   .description('Scan project files and store in memory')
-  .action(() => {
+  .action(async () => {
     try{
-      const projectPath = process.cwd();
-      const store = initializeStore(projectPath);
-      store.clearFiles();
-      console.log(chalk.blue('Scanning project...'));
-      const files = scanProject(projectPath, store);
-      console.log(chalk.green(`Scanned ${files.length} files`));
-      console.log(chalk.gray(`Memory stored at: ${projectPath}/.devmind/memory.db`));
+      const projectPath = process.cwd()
+      const store = initializeStore(projectPath)
+      store.clearFiles()
+      console.log(chalk.blue('Scanning project...'))
+      const files = await scanProject(projectPath, store)
+      console.log(chalk.green(`Scanned and embedded ${files.length} files`))
+      console.log(chalk.gray(`Memory stored at: ${projectPath}/.devmind/memory.db`))
     } catch (error) {
       console.log(chalk.red(`Error scanning project: ${error}`));
     }

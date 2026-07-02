@@ -1,6 +1,7 @@
 import path from 'path';
 import fs from 'fs';
 import { DevmindStore } from '../memory/store';
+import { generateEmbedding } from '../embeddings/embedder';
 import chalk from 'chalk';
 
 const IGNORED_DIRS = [
@@ -13,10 +14,23 @@ const IGNORED_DIRS = [
     '.next'
 ]
 
+const IGNORED_FILES = [
+    '.env',
+    '.env.example',
+    '.env.local',
+    'package-lock.json',
+    '.gitignore',
+    'package.json',
+]
+
 const IGNORED_EXTENSIONS = [
-    '.png','.jpg','.jpeg','.gif','.svg','.ico','.webp',
-    '.lock','.log','.zip','.tar','.gz','.ttf','.woff','.woff2',
-    '.mp4','.mp3','.wav','.ogg','.flac','.webm','.avi','.mkv'
+    '.png', '.jpg', '.jpeg', '.gif', '.svg', '.ico', '.webp',
+    '.log',
+    '.lock',
+    '.zip', '.tar', '.gz',
+    '.ttf', '.woff', '.woff2',
+    '.mp4', '.mp3',
+    '.env'
 ]
 
 const LANGUAGE_MAP : Record<string,string> = {
@@ -52,6 +66,9 @@ function getLanguage(filePath: string): string{
 
 function shouldIgnore(filePath: string): boolean{
     const dirName = path.basename(filePath);
+    if(IGNORED_FILES.includes(dirName)){
+        return true;
+    }
     if(IGNORED_DIRS.includes(dirName)){
         return true;
     }
@@ -62,48 +79,52 @@ function shouldIgnore(filePath: string): boolean{
     return false;
 }
 
-export function scanProject(projectPath: string, store: DevmindStore): string[]{
-    const scannedFiles: string[] = [];
-
-    function scanDir(dirPath: string): void{
-        let items: string[];
-        try{
-            items = fs.readdirSync(dirPath);
-        }catch(error){
-            console.log(chalk.red(`Error reading directory ${dirPath}: ${error}`));
-            return;
-        }
-
-        for(const item of items)
-        {
-            const filePath = path.join(dirPath, item);
-            if(shouldIgnore(filePath)){
-                continue;
-            }
-            let stat: fs.Stats;
-            try{
-                stat = fs.statSync(filePath);
-            }catch(error){
-                console.log(chalk.red(`Error reading file ${filePath}: ${error}`));
-                continue;
-            }
-            if(stat.isDirectory()){
-                scanDir(filePath);
-            }else{
-                const language = getLanguage(filePath);
-                let summary = '';
-                try{
-                    const content = fs.readFileSync(filePath, 'utf-8');
-                    summary = content.split('\n').slice(0,50).join('\n');
-                }catch(error){
-                    summary = '';
-                }
-                store.addFile(filePath, language, summary);
-                scannedFiles.push(filePath);
-            }
-        }
+function collectFiles(dirPath: string, result: string[] = []): string[]{
+    let items: string[];
+    try{
+        items = fs.readdirSync(dirPath);
+    }catch(error){
+        console.log(chalk.red(`Error reading directory ${dirPath}: ${error}`));
+        return [];
     }
 
-    scanDir(projectPath);
-    return scannedFiles;
+    for(const item of items)
+    {
+        const filePath = path.join(dirPath, item);
+        if(shouldIgnore(filePath)) {continue;}
+        let stat
+        try{
+            stat = fs.statSync(filePath);
+        }catch(error){
+            continue;
+        }
+        if(stat.isDirectory()){
+            collectFiles(filePath, result);
+        }else{
+            result.push(filePath);
+        }
+    }
+    return result;
+}
+
+export async function scanProject(projectPath: string, store: DevmindStore): Promise<string[]>{
+    const allFiles = collectFiles(projectPath);
+    for(const filePath of allFiles){
+        const language = getLanguage(filePath);
+        let summary = '';
+        try{
+            const content = fs.readFileSync(filePath, 'utf8');
+            summary = content.split('\n').slice(0, 50).join('\n');
+        }catch(error){
+            summary = '';
+        }
+        store.addFile(filePath, language, summary);
+        const textToEmbed = `file: ${filePath}\nlanguage: ${language}\nsummary: ${summary}`;
+        const embedding = await generateEmbedding(textToEmbed);
+        if(embedding.length > 0){
+            store.updateEmbedding(filePath, embedding);
+        }
+        console.log(chalk.green(`Embedded ${filePath}`));
+    }
+    return allFiles;
 }

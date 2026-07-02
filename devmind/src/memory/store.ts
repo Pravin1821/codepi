@@ -13,6 +13,7 @@ export interface DevmindStore {
     getDecisions: () => any[]
     getDuplicates: () => any[]
     clearFiles: () => void
+    updateEmbedding: (filePath: string, embedding: number[]) => void
 }
 
 export function initializeStore(projectPath: string): DevmindStore {
@@ -32,6 +33,7 @@ export function initializeStore(projectPath: string): DevmindStore {
             path TEXT NOT NULL,
             language TEXT NOT NULL,
             summary TEXT NOT NULL,
+            embedding TEXT, 
             created_at TEXT DEFAULT CURRENT_TIMESTAMP
         );
         CREATE TABLE IF NOT EXISTS tasks (
@@ -101,6 +103,10 @@ export function initializeStore(projectPath: string): DevmindStore {
         },
         clearFiles: () => {
              db.prepare('DELETE FROM files').run()
+        },
+        updateEmbedding: (filePath: string, embedding: number[]) => {
+            const embeddingJson = JSON.stringify(embedding);
+            db.prepare(`UPDATE files SET embedding = @embedding WHERE path = @path`).run({embedding: embeddingJson, path: filePath});
         }
     };
 
