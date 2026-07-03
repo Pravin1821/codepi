@@ -9,7 +9,9 @@
     "start": "node dist/cli/index.js",
     "init": "ts-node src/cli/index.ts init",
     "scan": "ts-node src/cli/index.ts scan",
-    "status": "ts-node src/cli/index.ts status"
+    "status": "ts-node src/cli/index.ts status",
+    "duplicates": "ts-node src/cli/index.ts duplicates",
+    "check": "ts-node src/cli/index.ts check"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.106.0",
