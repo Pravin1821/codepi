@@ -45,7 +45,7 @@ program
 
 program
   .command('status')
-  .description('Show what is built and pending')
+  .description('Show what is built, pending and token saved')
   .action(() => {
     try{
       const projectPath = process.cwd();
@@ -55,15 +55,57 @@ program
       const tasks = store.getTasks();
       const decisions = store.getDecisions();
       const duplicates = store.getDuplicates();
+      const tokenLogs = store.getTokenLogs();
 
-      console.log(chalk.bold('\n devmind status \n'));
-      console.log(chalk.green(' File scanned: '+files.length));
-      console.log(chalk.green(' Tasks recorded: '+tasks.length));
-      console.log(chalk.green(' Decisions logged: '+decisions.length));
-      console.log(chalk.green(' Duplicates flagged: '+duplicates.length));
-    }
-    catch (error) {
-      console.log(chalk.red(`Error getting status: ${error}`));
+      console.log(chalk.bold.blue('\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━'))
+      console.log(chalk.bold.white('  devmind — project intelligence'))
+      console.log(chalk.bold.blue('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n'))
+
+      console.log(chalk.bold.yellow('  MEMORY'))
+      console.log(chalk.green(`  ✓ Files scanned:       ${files.length}`))
+      console.log(chalk.green(`  ✓ Tasks completed:     ${tasks.filter((t:any) => t.status === 'done').length}`))
+      console.log(chalk.green(`  ✓ Decisions logged:    ${decisions.length}`))
+      console.log(chalk.red(`  ⚠ Duplicates flagged:  ${duplicates.length}`))
+
+       if (tasks.length > 0) {
+        console.log(chalk.bold.yellow('\n  RECENT PROMPTS'))
+        tasks.slice(-5).reverse().forEach((task: any) => {
+          const status = task.status === 'done'
+            ? chalk.green('✓')
+            : chalk.yellow('⏳')
+          console.log(`  ${status} ${chalk.white(task.prompt)}`)
+          console.log(chalk.gray(`    → ${task.result?.slice(0, 80)}...`))
+          console.log(chalk.gray(`    → ${task.created_at}`))
+        })
+      }
+
+      if (duplicates.length > 0) {
+        console.log(chalk.bold.yellow('\n  DUPLICATES FLAGGED'))
+        duplicates.forEach((dup: any) => {
+          const fileA = dup.file_a.split(/[\\/]/).pop()
+          const fileB = dup.file_b.split(/[\\/]/).pop()
+          console.log(chalk.red(`  ⚠ ${fileA} ↔ ${fileB} (${Math.round(dup.similarity * 100)}% similar)`))
+        })
+      }
+
+      if (tokenLogs.length > 0) {
+        const totalPromptTokens = tokenLogs.reduce((sum: number, log: any) => sum + log.prompt_tokens, 0)
+        const totalSavedTokens = tokenLogs.reduce((sum: number, log: any) => sum + log.saved_tokens, 0)
+        const savingPercent = totalPromptTokens > 0
+          ? Math.round((totalSavedTokens / (totalPromptTokens + totalSavedTokens)) * 100)
+          : 0
+
+        console.log(chalk.bold.yellow('\n  TOKEN SAVINGS'))
+        console.log(chalk.green(`  ✓ Tokens used:         ${totalPromptTokens}`))
+        console.log(chalk.green(`  ✓ Tokens saved:        ${totalSavedTokens}`))
+        console.log(chalk.green(`  ✓ Efficiency:          ${savingPercent}% saved`))
+      }
+
+      console.log(chalk.bold.blue('\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n'))
+
+    } catch (error) {
+      console.log(chalk.red('✗ Could not read devmind memory'))
+      console.log(chalk.gray('  Run devmind init first'))
     }
   });
 
@@ -137,6 +179,38 @@ program
     catch(error){
       console.log(chalk.red(`Error asking AI: ${error}`));
       console.log(chalk.gray('Make sure Ollama is running: Ollama server'));
+    }
+  })
+
+program
+  .command('history')
+  .description('Show past prompts and AI responses')
+  .action(() => {
+    try{
+      const projectPath = process.cwd();
+      const store = initializeStore(projectPath);
+      const tasks = store.getTasks();
+
+      if(tasks.length === 0){
+        console.log(chalk.yellow('No history yet - use devmind ask to start a conversation!'));
+        return;
+      }
+      console.log(chalk.bold.blue('\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━'))
+      console.log(chalk.bold.white('  devmind history'))
+      console.log(chalk.bold.blue('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n'))
+
+      tasks.reverse().forEach((task: any, i: number) => {
+        console.log(chalk.bold.yellow(`  ${i + 1}. ${task.prompt}`))
+        console.log(chalk.gray(`     ${task.created_at}`))
+        console.log(chalk.white(`     ${task.result?.slice(0, 150)}...`))
+        console.log('')
+      })
+
+      console.log(chalk.bold.blue('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n'))
+
+    } catch (error) {
+      console.log(chalk.red('✗ Could not read history'))
+      console.log(chalk.gray('  Run devmind init first'))
     }
   })
 

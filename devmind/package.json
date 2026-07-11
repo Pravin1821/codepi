@@ -12,7 +12,9 @@
     "status": "ts-node src/cli/index.ts status",
     "duplicates": "ts-node src/cli/index.ts duplicates",
     "check": "ts-node src/cli/index.ts check",
-    "ask": "ts-node src/cli/index.ts ask"
+    "ask": "ts-node src/cli/index.ts ask",
+    "history": "ts-node src/cli/index.ts history",
+    "clear": "ts-node src/cli/index.ts clear"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.106.0",

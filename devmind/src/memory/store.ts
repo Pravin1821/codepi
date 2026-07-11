@@ -14,6 +14,8 @@ export interface DevmindStore {
     getDuplicates: () => any[]
     clearFiles: () => void
     updateEmbedding: (filePath: string, embedding: number[]) => void
+    addTokenLog: (command: string, promptTokens: number, savedTokens: number) => void
+    getTokenLogs: () => any[]
 }
 
 export function initializeStore(projectPath: string): DevmindStore {
@@ -54,6 +56,13 @@ export function initializeStore(projectPath: string): DevmindStore {
             file_a      TEXT NOT NULL,
             file_b      TEXT NOT NULL,
             similarity  REAL NOT NULL,
+            created_at  TEXT DEFAULT (datetime('now'))
+        );
+        CREATE TABLE IF NOT EXISTS token_logs (
+            id          INTEGER PRIMARY KEY AUTOINCREMENT,
+            command     TEXT NOT NULL,
+            prompt_tokens   INTEGER DEFAULT 0,
+            saved_tokens    INTEGER DEFAULT 0,
             created_at  TEXT DEFAULT (datetime('now'))
         );
     `);
@@ -107,6 +116,15 @@ export function initializeStore(projectPath: string): DevmindStore {
         updateEmbedding: (filePath: string, embedding: number[]) => {
             const embeddingJson = JSON.stringify(embedding);
             db.prepare(`UPDATE files SET embedding = @embedding WHERE path = @path`).run({embedding: embeddingJson, path: filePath});
+        },
+        addTokenLog: (command: string, promptTokens: number, savedTokens: number) => {
+        db.prepare(`
+            INSERT INTO token_logs (command, prompt_tokens, saved_tokens)
+            VALUES (@command, @promptTokens, @savedTokens)
+            `).run({ command, promptTokens, savedTokens })
+        },
+        getTokenLogs: () => {
+            return db.prepare('SELECT * FROM token_logs ORDER BY created_at DESC').all()
         }
     };
 
