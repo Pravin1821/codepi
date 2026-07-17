@@ -1,0 +1,43 @@
+# Source code (compiled dist/ is published)
+src/
+*.ts
+tsconfig.json
+
+# Environment files
+.env
+.env.local
+.env.production
+.env.example
+
+# Local devmind memory
+.devmind/
+*.db
+*.db-journal
+*.db-wal
+*.db-shm
+
+# Test & coverage
+test/
+tests/
+coverage/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+logs/
+*.log
+
+# TypeScript cache
+*.tsbuildinfo
+
+# NPM
+node_modules/
+package-lock.json

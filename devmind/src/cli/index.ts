@@ -7,11 +7,14 @@ import {scanProject} from '../scanner/fileScanner';
 import { findDuplicates, checkPrompt } from '../analyzer/dupDetector';
 import { askAI } from '../ai/provider';
 
+// eslint-disable-next-line @typescript-eslint/no-var-requires
+const { version } = require('../../package.json');
+
 const program = new Command();
 program
   .name('devmind')
   .description('AI memory layer for your codebase')
-  .version('0.0.1');
+  .version(version);
 
 program
   .command('init')

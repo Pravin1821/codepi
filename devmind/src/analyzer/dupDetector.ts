@@ -132,3 +132,15 @@ export async function checkPrompt(
     matches.sort((a,b) => b.similarity - a.similarity)
     return matches.slice(0,5);
 }
+
+export function expandPrompt(prompt: string): string[] {
+  const tokens = prompt.toLowerCase().split(/[\s,;:.!?()]+/).filter(Boolean);
+  const common = new Set(['the', 'a', 'an', 'is', 'are', 'was', 'were', 'be', 'been',
+    'have', 'has', 'had', 'do', 'does', 'did', 'will', 'would', 'could', 'should',
+    'may', 'might', 'can', 'shall', 'to', 'of', 'in', 'for', 'on', 'with', 'at',
+    'by', 'from', 'as', 'into', 'through', 'during', 'before', 'after', 'above',
+    'below', 'between', 'this', 'that', 'these', 'those', 'it', 'its', 'and', 'or',
+    'but', 'not', 'no', 'nor', 'so', 'if', 'then', 'else', 'when', 'where', 'why',
+    'how', 'what', 'which', 'who', 'whom', 'build', 'make', 'create', 'add', 'get']);
+  return tokens.filter(t => t.length > 2 && !common.has(t));
+}
