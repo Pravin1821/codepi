@@ -29,7 +29,7 @@ codepi sits between you and your AI assistant. It:
 ## Installation
 
 ```bash
-npm install -g @pravin-sk/codepi
+npm install -g @pravin_sk/codepi
 ```
 
 ## Quick Start
